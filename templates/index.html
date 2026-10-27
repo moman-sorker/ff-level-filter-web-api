@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FF Level Filter — Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="bg-orb orb-1"></div>
+<div class="bg-orb orb-2"></div>
+<div class="bg-orb orb-3"></div>
+<div class="grid-overlay"></div>
+
+<div class="app">
+  <!-- HEADER -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo-dot"></div>
+      <div>
+        <h1>FF LEVEL FILTER</h1>
+        <p class="tag">Region-aware · JSON driven · Live API</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span id="statusPill" class="pill pill-idle">IDLE</span>
+      
+      <!-- নতুন Clear বাটন -->
+      <button class="btn btn-ghost" id="clearBtn" style="display: none; color: var(--danger); border-color: var(--danger);">🗑 Clear Data</button>
+      
+      <button class="btn btn-ghost" id="uploadBtn">⬆ Upload JSON</button>
+    </div>
+  </header>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stat-card">
+      <span class="stat-label">Regions</span>
+      <span class="stat-value" id="statRegions">0</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Total Accounts</span>
+      <span class="stat-value" id="statAccounts">0</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Results Found</span>
+      <span class="stat-value" id="statResults">0</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Failed</span>
+      <span class="stat-value danger" id="statFailed">0</span>
+    </div>
+  </section>
+
+  <!-- MAIN GRID -->
+  <section class="main-grid">
+    <!-- Regions -->
+    <aside class="glass-panel">
+      <div class="panel-head">
+        <h2>🌍 Regions</h2>
+        <button class="btn btn-primary btn-sm" id="startAllBtn">▶ Start All</button>
+      </div>
+      <div id="regionsList" class="regions-list">
+        <div class="empty-state">Loading regions…</div>
+      </div>
+    </aside>
+
+    <!-- Live progress -->
+    <div class="glass-panel">
+      <div class="panel-head">
+        <h2>⚡ Live Progress</h2>
+        <span class="mono" id="progressMeta">0 / 0</span>
+      </div>
+
+      <div class="progress-shell">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-meta-row">
+        <span class="mono small" id="currentJob">Idle</span>
+        <span class="mono small" id="percentText">0%</span>
+      </div>
+
+      <div class="counters-grid" id="countersGrid">
+        <!-- filled by JS -->
+      </div>
+
+      <div class="log-shell">
+        <div class="log-head">Activity Log</div>
+        <div class="log-body" id="logBody">
+          <div class="log-empty">Waiting for scan…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="glass-panel results-panel">
+    <div class="panel-head">
+      <h2>📊 Results</h2>
+        <div class="results-head-right">
+            <select id="regionSelect" class="select"></select>
+            <!-- এই বাটনটি মিসিং ছিল, এটি যোগ করুন -->
+            <button class="btn btn-ghost btn-sm" id="downloadBtn" style="color: var(--cyan); border-color: rgba(34,227,255,0.3);">
+            ⬇ Download JSON
+            </button>
+        </div>
+    </div>
+
+    <div class="filter-tabs" id="filterTabs"></div>
+
+    <div class="table-wrap">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Account</th>
+            <th class="th-right">Action</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody">
+          <tr><td colspan="3" class="table-empty">No data yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="footer">FF LEVEL FILTER · UI Panel · Powered by M. SARKER API</footer>
+</div>
+
+<!-- Upload modal -->
+<div class="modal-backdrop" id="uploadModal">
+  <div class="modal glass-panel">
+    <h3>⬆ Upload Region Data</h3>
+    <p class="muted small">
+      Format: <code>[{"uid": "4139440398", "password": "..."}]</code><br>
+      File save হবে <code>&lt;region&gt;_data.json</code> হিসেবে।
+    </p>
+
+    <label class="form-label">Region code</label>
+    <input type="text" id="regionCode" class="text-input" placeholder="e.g. BD, IND, PK" />
+
+    <label class="form-label" style="margin-top:12px;">JSON file</label>
+    <!-- Drag & Drop Area -->
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-zone-text" id="dropZoneText">
+        <span style="font-size: 24px; display: block; margin-bottom: 8px;">📁</span>
+        Drag & drop JSON here or <span style="color: var(--cyan);">Click to browse</span>
+      </div>
+      <!-- Actual file input hidden -->
+      <input type="file" id="jsonFile" accept=".json,application/json" style="display: none;" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelUpload">Cancel</button>
+      <button class="btn btn-primary" id="confirmUpload">Upload</button>
+    </div>
+    <div id="uploadError" class="upload-error"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
